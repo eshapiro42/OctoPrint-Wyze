@@ -1,0 +1,17 @@
+<p>Connected to Wyze as {{ plugin_wyze_email|escape }}.</p>
+
+{%- for device_type in plugin_wyze_devices %}
+{%- if plugin_wyze_devices[device_type] %}
+<h1>{{ device_type }}s</h1>
+<ul>
+{%- for device in plugin_wyze_devices[device_type] %}
+{%- if device.is_online %}
+{%- set status_class="wyze-device-online" %}
+{%- else %}
+{%- set status_class="wyze-device-offline" %}
+{%- endif %}
+    <li class="wyze-device-status {{ status_class }}">{{ device.name }}</span></li>
+{%- endfor %}
+</ul>
+{%- endif %}
+{%- endfor %}

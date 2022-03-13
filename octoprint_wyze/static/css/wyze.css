@@ -1,0 +1,11 @@
+li.wyze-device-status::marker {
+    font-size: 20px;
+}
+
+li.wyze-device-online::marker {
+    color: green;
+}
+
+li.wyze-device-offline::marker {
+    color: red;
+}

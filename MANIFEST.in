@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_wyze/templates *
+recursive-include octoprint_wyze/translations *
+recursive-include octoprint_wyze/static *
