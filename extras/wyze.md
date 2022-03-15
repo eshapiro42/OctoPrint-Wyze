@@ -13,7 +13,7 @@ date: today's date in format YYYY-MM-DD, e.g. 2015-04-21
 
 homepage: https://github.com/eshapiro42/OctoPrint-Wyze
 source: https://github.com/eshapiro42/OctoPrint-Wyze
-archive: https://github.com/eshapiro42/OctoPrint-Wyze/archive/master.zip
+archive: https://github.com/eshapiro42/OctoPrint-Wyze/archive/main.zip
 
 # TODO
 # Set this to true if your plugin uses the dependency_links setup parameter to include
