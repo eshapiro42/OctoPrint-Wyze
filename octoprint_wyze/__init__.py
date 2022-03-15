@@ -4,29 +4,33 @@ from __future__ import absolute_import, unicode_literals
 from octoprint.plugin import (
     AssetPlugin,
     SettingsPlugin,
+    SimpleApiPlugin,
     StartupPlugin,
     TemplatePlugin, 
 )
 
-from .wyze_devices import WyzeDevices
+from .wyze_devices import Wyze, WYZE_DEVICE_TYPES
 
 
 class WyzePlugin(
     AssetPlugin,
     SettingsPlugin,
+    SimpleApiPlugin,
     StartupPlugin,
     TemplatePlugin,
 ):
 
-    def on_after_startup(self):
+    def on_startup(self, host, port):
         try:
-            self.wyze_devices = WyzeDevices(
+            self.wyze = Wyze(
                 email=self._settings.get(["wyze_email"]),
                 password=self._settings.get(["wyze_password"])
             )
-            print("Wyze Plugin successfully connected to Wyze!")
+            self._logger.info("Wyze Plugin successfully connected to Wyze!")
+            self._logger.info(self.wyze.devices)
         except:
-            print("Wyze Plugin could not connect to Wyze.")
+            self._logger.info("Wyze Plugin could not connect to Wyze.")
+            raise
 
 
     def get_settings_defaults(self):
@@ -39,7 +43,8 @@ class WyzePlugin(
     def get_template_vars(self):
         return dict(
             email=self._settings.get(["wyze_email"]),
-            devices=self.wyze_devices.devices,
+            device_types=WYZE_DEVICE_TYPES,
+            devices=self.wyze.devices,
         )
 
 
@@ -49,16 +54,33 @@ class WyzePlugin(
                 type="settings",
                 custom_bindings=False,
             ),
-            dict(
-                type="tab",
-                custom_bindings=False,
-            )
         ]
 
     def get_assets(self):
         return dict(
             css=["css/wyze.css"],
+            js=["js/wyze.js"],
         )
+
+
+    def get_api_commands(self):
+        return dict(
+            turn_on=["device_mac"],
+            turn_off=["device_mac"],
+        )
+
+
+    def on_api_command(self, command, data):
+        if command == "turn_on":
+            device_mac = data["device_mac"]
+            device = self.wyze.devices[device_mac]
+            self._logger.info(f"Turning on Wyze {device.type} with device_mac={device_mac}...")
+            device.turn_on()
+        elif command == "turn_off":
+            device_mac = data["device_mac"]
+            device = self.wyze.devices[device_mac]
+            self._logger.info(f"Turning off Wyze {device.type} with device_mac={device_mac}...")
+            device.turn_off()
 
 
 __plugin_pythoncompat__ = ">=3.8,<4"

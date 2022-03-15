@@ -8,6 +8,28 @@ $(function() {
     function WyzeViewModel(parameters) {
         var self = this;
 
+        self.settings = parameters[0];
+
+        self.turnOnDevice = function(device_mac) {
+            OctoPrint.simpleApiCommand(
+                "wyze",
+                "turn_on", 
+                {
+                    "device_mac": device_mac,
+                }
+            );
+        };
+
+        self.turnOffDevice = function(device_mac) {
+            OctoPrint.simpleApiCommand(
+                "wyze",
+                "turn_off", 
+                {
+                    "device_mac": device_mac,
+                }
+            );
+        };
+
         // assign the injected parameters, e.g.:
         // self.loginStateViewModel = parameters[0];
         // self.settingsViewModel = parameters[1];
@@ -22,8 +44,8 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push({
         construct: WyzeViewModel,
         // ViewModels your plugin depends on, e.g. loginStateViewModel, settingsViewModel, ...
-        dependencies: [ /* "loginStateViewModel", "settingsViewModel" */ ],
+        dependencies: ["settingsViewModel"],
         // Elements to bind to, e.g. #settings_plugin_wyze, #tab_plugin_wyze, ...
-        elements: [ /* ... */ ]
+        elements: ["#tab_plugin_wyze"]
     });
 });

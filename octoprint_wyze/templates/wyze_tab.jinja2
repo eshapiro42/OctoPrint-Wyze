@@ -1,17 +1,37 @@
 <p>Connected to Wyze as {{ plugin_wyze_email|escape }}.</p>
 
-{%- for device_type in plugin_wyze_devices %}
-{%- if plugin_wyze_devices[device_type] %}
+{%- for device_type in plugin_wyze_device_types %}
 <h1>{{ device_type }}s</h1>
 <ul>
-{%- for device in plugin_wyze_devices[device_type] %}
-{%- if device.is_online %}
-{%- set status_class="wyze-device-online" %}
-{%- else %}
-{%- set status_class="wyze-device-offline" %}
-{%- endif %}
+    {%- for device_mac, device in plugin_wyze_devices.items() %}
+        {%- if device.type == device_type %}
+            {%- if device.is_online %}
+                {%- set status_class="wyze-device-online" %}
+            {%- else %}
+                {%- set status_class="wyze-device-offline" %}
+            {%- endif %}
     <li class="wyze-device-status {{ status_class }}">{{ device.name }}</span></li>
-{%- endfor %}
+        <form action="" method="post"></form>
+        <div class="btn-group">
+        <button class="btn" data-bind="click: turnOnDevice.bind($data, '{{ device_mac }}');">Turn On</button>
+        <button class="btn dropdown-toggle" data-toggle="dropdown">
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>When a print starts</li>
+            <li>When a print ends<li>
+        </ul>
+        <button class="btn" data-bind="click: turnOffDevice.bind($data, '{{ device_mac }}');">Turn Off</button>
+        <button class="btn dropdown-toggle" data-toggle="dropdown">
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li>When a print starts</li>
+            <li>When a print ends<li>
+        </ul>
+
+        </div>
+        {%- endif %}
+    {%- endfor %}
 </ul>
-{%- endif %}
 {%- endfor %}
