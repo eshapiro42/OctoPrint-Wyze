@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from collections import defaultdict
 from contextlib import contextmanager
 from enum import Enum, auto
-from typing import Optional
+from typing import Optional, List, Dict
 
 
 class Event(Enum):
@@ -182,4 +183,21 @@ class EventHandler:
                 action_name = result[2]
                 return Action.get_by_name(action_name)
             return None
+
+    
+    def get_registrations(self) -> Dict:
+        registrations = defaultdict(dict)
+        with self.db_conn() as cur:
+            for device_mac, event_name, action_name in cur.execute(
+                """
+                    SELECT * FROM
+                        registrations
+                """
+            ):
+                registrations[device_mac][event_name] = action_name
+        return registrations
+
+
+
+
 

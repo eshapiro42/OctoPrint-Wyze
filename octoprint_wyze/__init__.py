@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import flask
 from octoprint.plugin import (
     AssetPlugin,
     EventHandlerPlugin,
@@ -23,15 +24,10 @@ class WyzePlugin(
     TemplatePlugin,
 ):
     def on_startup(self, host, port):
-        try:
-            self.wyze = Wyze(
-                email=self._settings.get(["wyze_email"]),
-                password=self._settings.get(["wyze_password"])
-            )
-            self._logger.info("Wyze Plugin successfully connected to Wyze!")
-        except:
-            self._logger.info("Wyze Plugin could not connect to Wyze.")
-            raise
+        self.wyze = Wyze(
+            email=self._settings.get(["wyze_email"]),
+            password=self._settings.get(["wyze_password"])
+        )
 
 
     def on_after_startup(self):
@@ -74,6 +70,7 @@ class WyzePlugin(
         return dict(
             turn_on=["device_mac"],
             turn_off=["device_mac"],
+            get_registrations=[],
         )
 
 
@@ -88,6 +85,11 @@ class WyzePlugin(
             device = self.wyze.devices[device_mac]
             self._logger.info(f"Turning off Wyze {device.type} with device_mac={device_mac}...")
             device.turn_off()
+        elif command == "get_registrations":
+            self._logger.info(f"Sending event handler registrations...")
+            registrations = self.event_handler.get_registrations()
+            return flask.jsonify(registrations)
+
 
     
     def on_event(self, event_name, payload):

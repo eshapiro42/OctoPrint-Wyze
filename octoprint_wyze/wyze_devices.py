@@ -1,13 +1,19 @@
 from wyze_sdk import Client
+from wyze_sdk.errors import WyzeClientConfigurationError
 
 
 class Wyze:
     def __init__(self, email, password):
-        self.client = Client(email=email, password=password)
+        try:
+            self.client = Client(email=email, password=password)
+        except WyzeClientConfigurationError:
+            self.client = None
         self.refresh_devices()
 
     def refresh_devices(self):
         self.devices = {}
+        if self.client is None:
+            return
         for device in self.client.devices_list():
             wyze_device = WyzeDeviceFactory(self.client, device)
             self.devices[device.mac] = wyze_device
