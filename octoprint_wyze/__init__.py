@@ -28,7 +28,6 @@ class WyzePlugin(
                 email=self._settings.get(["wyze_email"]),
                 password=self._settings.get(["wyze_password"])
             )
-            self.event_handler = None
             self._logger.info("Wyze Plugin successfully connected to Wyze!")
         except:
             self._logger.info("Wyze Plugin could not connect to Wyze.")
