@@ -3,34 +3,41 @@ from __future__ import absolute_import, unicode_literals
 
 from octoprint.plugin import (
     AssetPlugin,
+    EventHandlerPlugin,
     SettingsPlugin,
     SimpleApiPlugin,
     StartupPlugin,
     TemplatePlugin, 
 )
 
+from .events import Event, Action, EventHandler
 from .wyze_devices import Wyze, WYZE_DEVICE_TYPES
 
 
 class WyzePlugin(
     AssetPlugin,
+    EventHandlerPlugin,
     SettingsPlugin,
     SimpleApiPlugin,
     StartupPlugin,
     TemplatePlugin,
 ):
-
     def on_startup(self, host, port):
         try:
             self.wyze = Wyze(
                 email=self._settings.get(["wyze_email"]),
                 password=self._settings.get(["wyze_password"])
             )
+            self.event_handler = None
             self._logger.info("Wyze Plugin successfully connected to Wyze!")
-            self._logger.info(self.wyze.devices)
         except:
             self._logger.info("Wyze Plugin could not connect to Wyze.")
             raise
+
+
+    def on_after_startup(self):
+        self.data_folder = self.get_plugin_data_folder()
+        self.event_handler = EventHandler(self.data_folder, self._logger)
 
 
     def get_settings_defaults(self):
@@ -55,6 +62,7 @@ class WyzePlugin(
                 custom_bindings=False,
             ),
         ]
+
 
     def get_assets(self):
         return dict(
@@ -82,6 +90,20 @@ class WyzePlugin(
             self._logger.info(f"Turning off Wyze {device.type} with device_mac={device_mac}...")
             device.turn_off()
 
+    
+    def on_event(self, event_name, payload):
+        if not hasattr(self, "event_handler") or Event.get_by_name(event_name) is None:
+            return
+        for device_mac in self.wyze.devices:
+            if (action := self.event_handler.get_action(device_mac, event_name)) is None:
+                continue
+            self._logger.info(f"Calling device_mac={device_mac} event={event_name} action={action}")
+            device = self.wyze.get_device_by_mac(device_mac)
+            if action == Action.TURN_ON:
+                device.turn_on()
+            elif action == Action.TURN_OFF:
+                device.turn_off()           
+        
 
 __plugin_pythoncompat__ = ">=3.8,<4"
 __plugin_implementation__ = WyzePlugin()

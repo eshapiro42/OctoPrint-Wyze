@@ -1,11 +1,11 @@
-li.wyze-device-status::marker {
-    font-size: 20px;
+.wyze-table {
+    display: block;
+    margin: 0 auto;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
-li.wyze-device-online::marker {
-    color: green;
-}
-
-li.wyze-device-offline::marker {
-    color: red;
+.wyze-table :is(td, th) {
+    text-align: center !important;
+    vertical-align: middle !important;
 }

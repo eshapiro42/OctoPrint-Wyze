@@ -1,6 +1,4 @@
-from abc import abstractmethod, abstractproperty
 from wyze_sdk import Client
-from wyze_sdk.errors import WyzeApiError
 
 
 class Wyze:
@@ -13,6 +11,9 @@ class Wyze:
         for device in self.client.devices_list():
             wyze_device = WyzeDeviceFactory(self.client, device)
             self.devices[device.mac] = wyze_device
+
+    def get_device_by_mac(self, device_mac):
+        return self.devices[device_mac]
 
 
 class WyzeDevice:
@@ -42,8 +43,8 @@ class WyzeDevice:
     @property
     def is_on(self):
         if self.device.is_on:
-            return "on"
-        return "off"
+            return "On"
+        return "Off"
 
     def __str__(self):
         return self.name
