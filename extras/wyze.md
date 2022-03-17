@@ -18,6 +18,7 @@ follow_dependency_links: false
 
 tags:
 - wyze
+- control
 - events
 - scheduling
 - lights
