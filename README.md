@@ -25,5 +25,5 @@ or manually using this URL:
 
 Add your Wyze username and password in the plugin settings and reload the server. 
 
-| :warning: Your username and password will be stored in plain text in OctoPrint's `config.yaml` file, so if other people have access to your server and you don't want them to have this information then do not use this plugin. |
+| :warning: Your Wyze username and password are encrypted by the plugin before being stored on your filesystem, but can be decrypted with relative ease by anyone on your system with access to OctoPrint's `config.yaml` file. Please ensure that you're taking appropriate precautions and not reusing passwords between sites! |
 | --- |

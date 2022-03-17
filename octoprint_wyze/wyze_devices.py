@@ -1,13 +1,13 @@
 from typing import List, Dict
 from wyze_sdk import Client
-from wyze_sdk.errors import WyzeClientConfigurationError
+from wyze_sdk.errors import WyzeClientConfigurationError, WyzeApiError
 
 
 class Wyze:
     def __init__(self, email, password):
         try:
             self.client = Client(email=email, password=password)
-        except WyzeClientConfigurationError:
+        except (WyzeClientConfigurationError, WyzeApiError):
             self.client = None
         self.refresh_devices()
 

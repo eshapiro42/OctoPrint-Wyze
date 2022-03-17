@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import flask
+from cryptography.fernet import Fernet
 from octoprint.plugin import (
     AssetPlugin,
     EventHandlerPlugin,
@@ -23,13 +24,6 @@ class WyzePlugin(
     StartupPlugin,
     TemplatePlugin,
 ):
-    def on_startup(self, host, port):
-        self.wyze = Wyze(
-            email=self._settings.get(["wyze_email"]),
-            password=self._settings.get(["wyze_password"])
-        )
-
-
     def on_after_startup(self):
         self.data_folder = self.get_plugin_data_folder()
         self.event_handler = EventHandler(self.data_folder)
@@ -39,7 +33,42 @@ class WyzePlugin(
         return dict(
             wyze_email=None,
             wyze_password=None,
+            wyze_key=None,
         )
+
+
+    def on_settings_save(self, data):
+        if "wyze_password" in data:
+            # Encrypt the password
+            password = data["wyze_password"]
+            key = Fernet.generate_key()
+            fernet = Fernet(key)
+            encrypted_password = fernet.encrypt(password.encode())
+            data["wyze_password"] = encrypted_password
+            data["wyze_key"] = key
+            # Try to connect to Wyze
+            self.wyze = Wyze(
+                email=self._settings.get(["wyze_email"]),
+                password=password
+            )
+        SettingsPlugin.on_settings_save(self, data)
+
+
+    def on_settings_load(self):
+        data = SettingsPlugin.on_settings_load(self)
+        if data["wyze_password"] is not None:
+            # Decrypt the password
+            encrypted_password = data["wyze_password"]
+            key = data["wyze_key"]
+            fernet = Fernet(key)
+            password = fernet.decrypt(encrypted_password).decode()
+            data["wyze_password"] = password
+            # Try to connect to Wyze
+            self.wyze = Wyze(
+                email=self._settings.get(["wyze_email"]),
+                password=password
+            )
+        return data
 
     
     def get_template_vars(self):
@@ -116,7 +145,7 @@ class WyzePlugin(
 
     
     def on_event(self, event_name, payload):
-        if not hasattr(self, "event_handler") or Event.get_by_name(event_name) is None:
+        if not hasattr(self, "wyze") or not hasattr(self, "event_handler") or Event.get_by_name(event_name) is None:
             return
         for device_mac in self.wyze.devices:
             if (action := self.event_handler.get_action(device_mac, event_name)) is None:
