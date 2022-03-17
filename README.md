@@ -4,7 +4,7 @@ OctoPrint-Wyze lets you control and automate Wyze home devices through OctoPrint
 
 NOTE: Only Python 3.8 and up will work! This is not ideal since OctoPrint does not officially support anything higher than Python 3.7 at the moment, so you will need to be comfortable updating OctoPrint's Python environment. This is a hard requirement because the wyze_sdk module that this plugin relies on will only work with Python 3.8 and up.
 
-![OctoPrint-Wyze Screenshot](/OctoPrint-Wyze.png))
+![OctoPrint-Wyze Screenshot](/OctoPrint-Wyze.png)
 
 ## Setup
 
