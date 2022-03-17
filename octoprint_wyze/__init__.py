@@ -126,8 +126,30 @@ class WyzePlugin(
             if action == Action.TURN_ON:
                 device.turn_on()
             elif action == Action.TURN_OFF:
-                device.turn_off()           
+                device.turn_off()        
+
+
+    def get_update_information(self):
+        return dict(
+            wyze=dict(
+                displayName=self._plugin_name,
+                displayVersion=self._plugin_version,
+                type="github_release",
+                current=self._plugin_version,
+                user="eshapiro42",
+                repo="OctoPrint-Wyze",
+                pip="https://github.com/eshapiro42/OctoPrint-Wyze/archive/{target_version}.zip"
+            )
+        )   
         
 
 __plugin_pythoncompat__ = ">=3.8,<4"
-__plugin_implementation__ = WyzePlugin()
+
+def __plugin_load__():
+    global __plugin_implementation__
+    __plugin_implementation__ = WyzePlugin()
+    
+    global __plugin_hooks__ 
+    __plugin_hooks = {
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+    }
