@@ -4,9 +4,6 @@
 
 ![OctoPrint-Wyze Screenshot](/OctoPrint-Wyze.png)
 
-| :warning: This plugin will only work with Python 3.8 and newer! |
-| --- |
-
 | :warning: This plugin relies on the reverse-engineered [`wyze_sdk`](https://github.com/shauntarves/wyze-sdk/) module and will break if Wyze makes significant changes to their API or otherwise renders it unusable. |
 | --- |
 
