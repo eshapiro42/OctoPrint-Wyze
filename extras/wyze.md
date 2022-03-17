@@ -8,44 +8,28 @@ authors:
 - Eric Shapiro
 license: AGPLv3
 
-# TODO
-date: today's date in format YYYY-MM-DD, e.g. 2015-04-21
+date: 2022-03-16
 
 homepage: https://github.com/eshapiro42/OctoPrint-Wyze
 source: https://github.com/eshapiro42/OctoPrint-Wyze
 archive: https://github.com/eshapiro42/OctoPrint-Wyze/archive/main.zip
 
-# TODO
-# Set this to true if your plugin uses the dependency_links setup parameter to include
-# library versions not yet published on PyPi. SHOULD ONLY BE USED IF THERE IS NO OTHER OPTION!
-#follow_dependency_links: false
+follow_dependency_links: false
 
-# TODO
 tags:
-- a list
-- of tags
-- that apply
-- to your plugin
-- (take a look at the existing plugins for what makes sense here)
+- wyze
+- events
+- scheduling
+- lights
 
-# TODO
 # When registering a plugin on plugins.octoprint.org, all screenshots should be uploaded not linked from external sites.
 screenshots:
-- url: url of a screenshot, /assets/img/...
-  alt: alt-text of a screenshot
-  caption: caption of a screenshot
-- url: url of another screenshot, /assets/img/...
-  alt: alt-text of another screenshot
-  caption: caption of another screenshot
-- ...
+- url: /assets/img/plugins/wyze/OctoPrint-Wyze.png
+  alt: OctoPrint-Wyze Screenshot
+  caption: OctoPrint-Wyze Screenshot
 
-# TODO
-featuredimage: url of a featured image for your plugin, /assets/img/...
 
-# TODO
-# You only need the following if your plugin requires specific OctoPrint versions or
-# specific operating systems to function - you can safely remove the whole
-# "compatibility" block if this is not the case.
+featuredimage: /assets/img/plugins/wyze/OctoPrint-Wyze.png
 
 compatibility:
 
@@ -93,9 +77,10 @@ compatibility:
   #
   # Plugins that only support Python 2 will not be accepted into the plugin repository.
 
-  python: ">=3,<4"
+  python: ">=3.8,<4"
 
 ---
 
-**TODO**: Longer description of your plugin, configuration examples etc. This part will be visible on the page at
-http://plugins.octoprint.org/plugin/wyze/
+OctoPrint-Wyze lets you control and automate Wyze home devices through OctoPrint. You can register plugs, lights and cameras to turn on or off whenever specific events occur. For example, you can set a light to turn on whenever the web client is opened, or a print or timelapse is started, then off when a print has finished.
+
+NOTE: Only Python 3.8 and up will work! This is not ideal since OctoPrint does not officially support anything higher than Python 3.7 at the moment, so you will need to be comfortable updating OctoPrint's Python environment. This is a hard requirement because the wyze_sdk module that this plugin relies on will only work with Python 3.8 and up.
