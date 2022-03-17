@@ -138,7 +138,7 @@ class WyzePlugin(
                 current=self._plugin_version,
                 user="eshapiro42",
                 repo="OctoPrint-Wyze",
-                pip="https://github.com/eshapiro42/OctoPrint-Wyze/archive/{target_version}.zip"
+                pip="https://github.com/eshapiro42/OctoPrint-Wyze/archive/refs/tag/v{target_version}.zip"
             )
         )   
         
