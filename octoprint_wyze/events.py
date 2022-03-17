@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from collections import defaultdict
 from contextlib import contextmanager
-from enum import Enum, auto
-from typing import Optional, List, Dict
+from enum import IntEnum, auto
+from typing import Optional, List, Tuple
 
 
-class Event(Enum):
-    CLIENT_OPENED = auto()
+class Event(IntEnum):
+    CLIENT_OPENED = 0
     CLIENT_CLOSED = auto()
     PRINT_STARTED = auto()
     PRINT_FAILED = auto()
@@ -56,8 +55,8 @@ class Event(Enum):
             return None
 
 
-class Action(Enum):
-    TURN_ON = auto()
+class Action(IntEnum):
+    TURN_ON = 0
     TURN_OFF = auto()
 
 
@@ -87,8 +86,7 @@ class Action(Enum):
 
 
 class EventHandler:
-    def __init__(self, data_folder: str, _logger):
-        self._logger = _logger
+    def __init__(self, data_folder: str):
         self.db_path = os.path.join(data_folder, "wyze-event-handler.db")
         self.create_table()
 
@@ -131,7 +129,6 @@ class EventHandler:
 
 
     def register(self, device_mac: str, event: Event, action: Action):
-        self._logger.info(f"Registering mac={device_mac} event={event} action={action}")
         with self.db_conn() as cur:
             try:
                 cur.execute(
@@ -148,7 +145,6 @@ class EventHandler:
 
 
     def unregister(self, device_mac: str, event: Event, action: Action):
-        self._logger.info(f"Unregistering mac={device_mac} event={event} action={action}")
         with self.db_conn() as cur:
             cur.execute(
                 """
@@ -185,19 +181,23 @@ class EventHandler:
             return None
 
     
-    def get_registrations(self) -> Dict:
-        registrations = defaultdict(dict)
+    def get_registrations(self, device_mac: str) -> Tuple[List]:
+        turn_on_registrations = [False] * len(Event)
+        turn_off_registrations = [False] * len(Event)
         with self.db_conn() as cur:
-            for device_mac, event_name, action_name in cur.execute(
+            for _, event_name, action_name in cur.execute(
                 """
                     SELECT * FROM
                         registrations
-                """
+                    WHERE
+                        device_mac = ?
+                """,
+                (device_mac, )
             ):
-                registrations[device_mac][event_name] = action_name
-        return registrations
-
-
-
-
-
+                event = Event.get_by_name(event_name)
+                action = Action.get_by_name(action_name)
+                if action == Action.TURN_ON:
+                    turn_on_registrations[event] = True
+                elif action == Action.TURN_OFF:
+                    turn_off_registrations[event] = True
+        return turn_on_registrations, turn_off_registrations

@@ -12,7 +12,7 @@ from octoprint.plugin import (
 )
 
 from .events import Event, Action, EventHandler
-from .wyze_devices import Wyze, WYZE_DEVICE_TYPES
+from .wyze_devices import Wyze
 
 
 class WyzePlugin(
@@ -32,7 +32,7 @@ class WyzePlugin(
 
     def on_after_startup(self):
         self.data_folder = self.get_plugin_data_folder()
-        self.event_handler = EventHandler(self.data_folder, self._logger)
+        self.event_handler = EventHandler(self.data_folder)
 
 
     def get_settings_defaults(self):
@@ -45,8 +45,6 @@ class WyzePlugin(
     def get_template_vars(self):
         return dict(
             email=self._settings.get(["wyze_email"]),
-            device_types=WYZE_DEVICE_TYPES,
-            devices=self.wyze.devices,
         )
 
 
@@ -68,14 +66,28 @@ class WyzePlugin(
 
     def get_api_commands(self):
         return dict(
+            get_enums=[],
+            get_devices=[],
             turn_on=["device_mac"],
             turn_off=["device_mac"],
-            get_registrations=[],
+            register=["device_mac", "event_name", "action_name"],
+            unregister=["device_mac", "event_name", "action_name"],
         )
 
 
     def on_api_command(self, command, data):
-        if command == "turn_on":
+        if command == "get_enums":
+            self._logger.info("Sending enums...")
+            enums = {
+                "events": [Event.get_name(event) for event in Event],
+                "actions": [Action.get_name(action) for action in Action],
+            }
+            return flask.jsonify(enums)
+        elif command == "get_devices":
+            self._logger.info("Sending device info...")
+            devices = self.wyze.get_devices(self.event_handler)
+            return flask.jsonify(devices)
+        elif command == "turn_on":
             device_mac = data["device_mac"]
             device = self.wyze.devices[device_mac]
             self._logger.info(f"Turning on Wyze {device.type} with device_mac={device_mac}...")
@@ -85,11 +97,22 @@ class WyzePlugin(
             device = self.wyze.devices[device_mac]
             self._logger.info(f"Turning off Wyze {device.type} with device_mac={device_mac}...")
             device.turn_off()
-        elif command == "get_registrations":
-            self._logger.info(f"Sending event handler registrations...")
-            registrations = self.event_handler.get_registrations()
-            return flask.jsonify(registrations)
-
+        elif command == "register":
+            device_mac = data["device_mac"]
+            event_name = data["event_name"]
+            event = Event.get_by_name(event_name)
+            action_name = data["action_name"]
+            action = Action.get_by_name(action_name)
+            self._logger.info(f"Registering device_mac={device_mac} event={event} action={action}.")
+            self.event_handler.register(device_mac, event, action)
+        elif command == "unregister":
+            device_mac = data["device_mac"]
+            event_name = data["event_name"]
+            event = Event.get_by_name(event_name)
+            action_name = data["action_name"]
+            action = Action.get_by_name(action_name)
+            self._logger.info(f"Unregistering device_mac={device_mac} event={event} action={action}.")
+            self.event_handler.unregister(device_mac, event, action)
 
     
     def on_event(self, event_name, payload):

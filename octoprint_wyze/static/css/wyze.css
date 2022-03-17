@@ -2,10 +2,41 @@
     display: block;
     margin: 0 auto;
     overflow-x: auto;
-    white-space: nowrap;
 }
 
 .wyze-table :is(td, th) {
     text-align: center !important;
     vertical-align: middle !important;
+}
+
+.wyze-nowrap {
+    white-space: nowrap;
+}
+
+.wyze-list {
+    padding-left: 0px;
+    overflow-x: auto;
+    display: flex;
+    justify-content: space-around;
+    list-style-type: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.wyze-list li:not(:first-child) {
+    margin-left: 20px;
+}
+
+.wyze-sticky-column {
+    background-color: ghostwhite;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.wyze-sticky-column-first-row {
+    background-color: white;
+    left: 0;
+    position: sticky;
+    z-index: 1;
 }

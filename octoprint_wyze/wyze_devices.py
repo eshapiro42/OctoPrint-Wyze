@@ -1,3 +1,4 @@
+from typing import List, Dict
 from wyze_sdk import Client
 from wyze_sdk.errors import WyzeClientConfigurationError
 
@@ -20,6 +21,22 @@ class Wyze:
 
     def get_device_by_mac(self, device_mac):
         return self.devices[device_mac]
+
+    def get_devices(self, event_handler) -> List[Dict]:
+        self.refresh_devices()
+        devices = []
+        for device_mac, device in self.devices.items():
+            turn_on_registrations, turn_off_registrations = event_handler.get_registrations(device_mac)
+            devices.append(
+                {
+                    "device_mac": device_mac,
+                    "device_name": device.name,
+                    "device_type": device.type,
+                    "turn_on_registrations": turn_on_registrations,
+                    "turn_off_registrations": turn_off_registrations,
+                }
+            )
+        return devices
 
 
 class WyzeDevice:
@@ -83,9 +100,3 @@ WYZE_DEVICE_TYPES = {
 
 def WyzeDeviceFactory(client, device):
     return WYZE_DEVICE_TYPES[device.type](client, device)
-
-
-
-
-
-

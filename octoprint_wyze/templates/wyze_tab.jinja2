@@ -1,39 +1,37 @@
 <p>Connected to Wyze as {{ plugin_wyze_email|escape }}.</p>
 
-<table class="table table-bordered table-hover wyze-table">
-    <tbody>
+<table class="table table-bordered wyze-table">
+    <thead>
         <tr>
-            <th></th>
+            <th class="wyze-sticky-column-first-row"></th>
             <th>Type</th>
-            <th>Online</th>
-            <th>Automation</th>
+            <th>Control</th>
+            <!-- ko foreach: $root.events -->
+                <th data-bind="text: $data"></th>
+            <!-- /ko -->
         </tr>
-{%- for device_mac, device in plugin_wyze_devices.items() %}
+    </thead>
+    <tbody data-bind="foreach: devices">
         <tr>
-            <th>{{ device.name }}</td>
-            <td>{{ device.type }}</td>
-            <td>{{ device.is_online }}</td>
+            <th class="wyze-sticky-column" rowspan="2" data-bind="text: name"></th>
+            <td rowspan="2" data-bind="text: type"></td> 
             <td>
-                <div class="btn-group">
-                    <button class="btn" data-bind="click: turnOnDevice.bind($data, '{{ device_mac }}');">Turn On</button>
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-bind="">
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>When a print starts</li>
-                        <li>When a print ends<li>
-                    </ul>
-                    <button class="btn" data-bind="click: turnOffDevice.bind($data, '{{ device_mac }}');">Turn Off</button>
-                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-bind="">
-                        <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li>When a print starts</li>
-                        <li>When a print ends<li>
-                    </ul>
-                </div>
+                <button class="btn btn-primary wyze-nowrap" data-bind="click: turnOnDevice;">Turn On</button>
             </td>
+            <!-- ko foreach: turn_on_registrations -->
+                <td>
+                    <input type="checkbox" data-bind="checked: $data, click: $parent.turnOnCheckBoxClicked;" />
+                </td>
+            <!-- /ko -->
         </tr>
-{%- endfor %}
+            <td>
+                <button class="btn btn-danger wyze-nowrap" data-bind="click: turnOffDevice;">Turn Off</button>
+            </td>
+            <!-- ko foreach: turn_off_registrations -->
+                <td>
+                    <input type="checkbox" data-bind="checked: $data, click: $parent.turnOffCheckBoxClicked;" />
+                </td>
+            <!-- /ko -->
+        <tr> 
     </tbody>
 </table>
