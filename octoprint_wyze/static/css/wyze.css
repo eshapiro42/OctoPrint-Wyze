@@ -40,3 +40,74 @@
     position: sticky;
     z-index: 1;
 }
+
+.themeify.cyborg .wyze-sticky-column {
+    background-color: #0099CC; /* @blueDark */
+    color: white;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.cyborg .wyze-sticky-column-first-row {
+    background-color: #060606; /* @bodyBackground */
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.discoranged .wyze-sticky-column {
+    background-color: #FC8003; /* @orange */
+    color: #2f3136; /* @notquiteBlack */
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.discoranged .wyze-sticky-column-first-row {
+    background-color: #2f3136; /* @notquiteBlack */
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.discorded .wyze-sticky-column {
+    background-color: #7289DA; /* @blurple */
+    color: white;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.discorded .wyze-sticky-column-first-row {
+    background-color: #36393f; /* @darkish */
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.dyl .wyze-sticky-column {
+    background-color: #4caf50;
+    color: white;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.nighttime .wyze-sticky-column {
+    background-color: #34383C;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.nighttime .wyze-sticky-column-first-row {
+    background-color: #232629;
+    left: 0;
+    position: sticky;
+    z-index: 1;
+}
+
+.themeify.nighttime th {
+    border: 0;
+}
