@@ -7,6 +7,11 @@ assignees: ''
 
 ---
 
+**Check your Python version**
+Installing this plugin requires that your OctoPrint server is running Python 3.8 or newer. Python 3.7 and earlier are unsupported because the `wyze_sdk` module that this plugin depends on does not work for those versions. **Please do not open a bug report if you are not using a supported Python version.**
+
+If you are unsure what Python version OctoPrint is using, that information can be found in the lower left corner of OctoPrint's web interface. If you want to update OctoPrint's Python environment so that you can use this plugin, please see the bottom section of [this page](https://octoprint.org/download/) entitled "**Installing Manually**."
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
