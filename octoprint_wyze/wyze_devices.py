@@ -16,8 +16,8 @@ class Wyze:
         if self.client is None:
             return
         for device in self.client.devices_list():
-            wyze_device = WyzeDeviceFactory(self.client, device)
-            self.devices[device.mac] = wyze_device
+            if (wyze_device := WyzeDeviceFactory(self.client, device)) is not None:
+                self.devices[device.mac] = wyze_device
 
     def get_device_by_mac(self, device_mac):
         return self.devices[device_mac]
@@ -75,7 +75,7 @@ class WyzeDevice:
 
 class WyzeLight(WyzeDevice):
     def __init__(self, client, device):
-        self.client = client.lights
+        self.client = client.bulbs
         return super().__init__(device)
 
 
@@ -93,10 +93,14 @@ class WyzeCamera(WyzeDevice):
 
 WYZE_DEVICE_TYPES = {
     "Light": WyzeLight,
+    "MeshLight": WyzeLight,
     "Plug": WyzePlug,
+    "OutdoorPlug": WyzePlug,
     "Camera": WyzeCamera,
 }
 
 
 def WyzeDeviceFactory(client, device):
-    return WYZE_DEVICE_TYPES[device.type](client, device)
+    if device.type in WYZE_DEVICE_TYPES:
+        return WYZE_DEVICE_TYPES[device.type](client, device)
+    return None
