@@ -9,7 +9,7 @@
 
 ## Setup
 
-Ensure that OctoPrint is running Python 3.8 or higher. If you're not already sure about this, it probably isn't. But OctoPrint's Python version can be found at the bottom left of the web client.
+Ensure that OctoPrint is running Python 3.8 or higher. OctoPrint's Python version can be found at the bottom left of the web client.
 
 If you are running OctoPi and had to build Python 3.8+ from source, make sure you can import `sqlite3`. Otherwise, run `sudo apt install libsqlite3-dev` and then rebuild Python with `./configure --enable-loadable-sqlite-extensions && make`.
 
