@@ -2,6 +2,8 @@
 
 `OctoPrint-Wyze` lets you control and automate Wyze home devices through OctoPrint. You can register plugs, lights and cameras to turn on or off whenever specific events occur. For example, you can set a light to turn on whenever the web client is opened, or a print or timelapse is started, then off when a print has finished.
 
+This plugin has **no** support for camera streams or controls. This would be [very difficult](https://github.com/eshapiro42/OctoPrint-Wyze/issues/4#issuecomment-1075802410) to add. It is exclusively for automating the powering on or off of devices to coincide with the [available printer events](https://github.com/eshapiro42/OctoPrint-Wyze/blob/b2e42489d3a5bf51ef6369d570e03e22fb96dab6/octoprint_wyze/events.py#L10).
+
 ![OctoPrint-Wyze Screenshot](/OctoPrint-Wyze.png)
 
 | :warning: This plugin relies on the reverse-engineered [`wyze_sdk`](https://github.com/shauntarves/wyze-sdk/) module and will break if Wyze makes significant changes to their API or otherwise renders it unusable. |
