@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import flask
+
 from cryptography.fernet import Fernet
 from octoprint.plugin import (
     AssetPlugin,
@@ -11,10 +12,13 @@ from octoprint.plugin import (
     StartupPlugin,
     TemplatePlugin, 
 )
-
-from .events import Event, Action, EventHandler
+from .events import (
+    ActionType,
+    EventHandler,
+    EventType,
+)
 from .wyze_devices import Wyze
-
+        
 
 class WyzePlugin(
     AssetPlugin,
@@ -24,6 +28,10 @@ class WyzePlugin(
     StartupPlugin,
     TemplatePlugin,
 ):
+    def on_startup(self, host, port):
+        self.pending_actions = []
+
+
     def on_after_startup(self):
         self.data_folder = self.get_plugin_data_folder()
         self.event_handler = EventHandler(self.data_folder)
@@ -97,6 +105,7 @@ class WyzePlugin(
         return dict(
             get_enums=[],
             get_devices=[],
+            get_pending_actions=[],
             turn_on=["device_mac"],
             turn_off=["device_mac"],
             register=["device_mac", "event_name", "action_name"],
@@ -108,14 +117,17 @@ class WyzePlugin(
         if command == "get_enums":
             self._logger.info("Sending enums...")
             enums = {
-                "events": [Event.get_name(event) for event in Event],
-                "actions": [Action.get_name(action) for action in Action],
+                "events": [EventType.get_name(event) for event in EventType],
+                "actions": [ActionType.get_name(action) for action in ActionType],
             }
             return flask.jsonify(enums)
         elif command == "get_devices":
             self._logger.info("Sending device info...")
             devices = self.wyze.get_devices(self.event_handler)
             return flask.jsonify(devices)
+        elif command == "get_pending_actions":
+            pending_actions = [str(action) for action in self.pending_actions]
+            return flask.jsonify(pending_actions)
         elif command == "turn_on":
             device_mac = data["device_mac"]
             device = self.wyze.devices[device_mac]
@@ -129,33 +141,41 @@ class WyzePlugin(
         elif command == "register":
             device_mac = data["device_mac"]
             event_name = data["event_name"]
-            event = Event.get_by_name(event_name)
+            event_type = EventType.get_by_name(event_name)
             action_name = data["action_name"]
-            action = Action.get_by_name(action_name)
-            self._logger.info(f"Registering device_mac={device_mac} event={event} action={action}.")
-            self.event_handler.register(device_mac, event, action)
+            action_type = ActionType.get_by_name(action_name)
+            delay = data["delay"]
+            self._logger.info(f"Registering device_mac={device_mac} event={event_type} action={action_type} delay={delay}.")
+            self.event_handler.register(device_mac, event_type, action_type, delay)
         elif command == "unregister":
             device_mac = data["device_mac"]
             event_name = data["event_name"]
-            event = Event.get_by_name(event_name)
+            event_type = EventType.get_by_name(event_name)
             action_name = data["action_name"]
-            action = Action.get_by_name(action_name)
-            self._logger.info(f"Unregistering device_mac={device_mac} event={event} action={action}.")
-            self.event_handler.unregister(device_mac, event, action)
+            action_type = ActionType.get_by_name(action_name)
+            self._logger.info(f"Unregistering device_mac={device_mac} event={event_type} action={action_type}.")
+            self.event_handler.unregister(device_mac, event_type, action_type)
+            # Cancel any pending actions that match
+            matched_actions = []
+            for action in self.pending_actions:
+                if action.device.mac == device_mac and action.event_type == event_type and action.action_type == action_type:
+                    matched_actions.append(action)
+            for action in matched_actions:
+                self._logger.info(f"Cancelling pending action {action}...")
+                action.cancel()
 
     
     def on_event(self, event_name, payload):
-        if not hasattr(self, "wyze") or not hasattr(self, "event_handler") or Event.get_by_name(event_name) is None:
+        if not hasattr(self, "wyze") or not hasattr(self, "event_handler") or EventType.get_by_name(event_name) is None:
             return
         for device_mac in self.wyze.devices:
-            if (action := self.event_handler.get_action(device_mac, event_name)) is None:
-                continue
-            self._logger.info(f"Calling device_mac={device_mac} event={event_name} action={action}")
             device = self.wyze.get_device_by_mac(device_mac)
-            if action == Action.TURN_ON:
-                device.turn_on()
-            elif action == Action.TURN_OFF:
-                device.turn_off()        
+            if (action := self.event_handler.get_action(self, device, event_name)) is None:
+                continue
+            if any(action.device == device for action in self.pending_actions):
+                continue
+            self.pending_actions.append(action)
+            action.start()
 
 
     def get_update_information(self):
@@ -167,7 +187,7 @@ class WyzePlugin(
                 current=self._plugin_version,
                 user="eshapiro42",
                 repo="OctoPrint-Wyze",
-                pip="https://github.com/eshapiro42/OctoPrint-Wyze/archive/refs/tag/v{target_version}.zip"
+                pip="https://github.com/eshapiro42/OctoPrint-Wyze/archive/{target_version}.zip"
             )
         )   
         

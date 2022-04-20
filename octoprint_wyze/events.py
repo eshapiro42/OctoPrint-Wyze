@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import time
+
 from contextlib import contextmanager
 from enum import IntEnum, auto
-from typing import Optional, List, Tuple
+from threading import Thread
+from typing import Optional, List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .wyze_devices import WyzeDevice
 
 
-class Event(IntEnum):
+class EventType(IntEnum):
     CLIENT_OPENED = 0
     CLIENT_CLOSED = auto()
     PRINT_STARTED = auto()
@@ -39,7 +45,7 @@ class Event(IntEnum):
 
 
     @classmethod
-    def get_by_name(cls, event_name: str) -> Optional[Event]:
+    def get_by_name(cls, event_name: str) -> Optional[EventType]:
         reversed_names = {v: k for k, v in cls.names().items()}
         try:
             return reversed_names[event_name]
@@ -48,14 +54,14 @@ class Event(IntEnum):
 
 
     @classmethod
-    def get_name(cls, event: Event) -> Optional[str]:
+    def get_name(cls, event: EventType) -> Optional[str]:
         try:
             return cls.names()[event]
         except KeyError:
             return None
 
 
-class Action(IntEnum):
+class ActionType(IntEnum):
     TURN_ON = 0
     TURN_OFF = auto()
 
@@ -69,7 +75,7 @@ class Action(IntEnum):
 
 
     @classmethod
-    def get_by_name(cls, action_name: str) -> Optional[Action]:
+    def get_by_name(cls, action_name: str) -> Optional[ActionType]:
         reversed_names = {v: k for k, v in cls.names().items()}
         try:
             return reversed_names[action_name]
@@ -78,16 +84,56 @@ class Action(IntEnum):
 
 
     @classmethod
-    def get_name(cls, action: Action) -> Optional[str]:
+    def get_name(cls, action: ActionType) -> Optional[str]:
         try:
             return cls.names()[action]
         except KeyError:
             return None
 
 
+class Action(Thread):
+    def __init__(self, plugin, action_type: ActionType, event_type: EventType, device: WyzeDevice, delay: float = 0):
+        super().__init__(daemon=True)
+        self.action_type = action_type
+        self.action_name = "turn on" if action_type == ActionType.TURN_ON else "turn off"
+        self.event_type = event_type
+        self.device = device
+        self.plugin = plugin
+        self.delay = delay
+        self.device = device
+        self.delay = delay * 60 # Convert minutes to seconds
+        self.time_remaining = self.delay
+        self.plugin = plugin
+        self._cancel = False
+
+
+    def run(self):
+        start = time.time()
+        while time.time() - start < self.delay:
+            if self._cancel:
+                break
+            self.time_remaining = self.delay - (time.time() - start)
+            time.sleep(0.5)
+        if not self._cancel:
+            if self.action_type == ActionType.TURN_ON:
+                self.device.turn_on()
+            elif self.action_type == ActionType.TURN_OFF:
+                self.device.turn_off()
+            self.plugin.pending_actions.remove(self)
+
+
+    def cancel(self):
+        self._cancel = True
+        self.plugin.pending_actions.remove(self)
+
+
+    def __str__(self):
+        return f"{EventType.get_name(self.event_type)}: {self.device} will {self.action_name} in {round(self.time_remaining)} seconds."
+
+
 class EventHandler:
     def __init__(self, data_folder: str):
-        self.db_path = os.path.join(data_folder, "wyze-event-handler.db")
+        self.db_path = os.path.join(data_folder, "wyze-event-handler-v2.db")
         self.create_table()
 
     
@@ -109,7 +155,8 @@ class EventHandler:
                         (
                             device_mac text,
                             event_name text,
-                            action_name text
+                            action_name text,
+                            delay real
                         )
                 """
             )
@@ -128,7 +175,7 @@ class EventHandler:
             )
 
 
-    def register(self, device_mac: str, event: Event, action: Action):
+    def register(self, device_mac: str, event: EventType, action: ActionType, delay: float = 0):
         with self.db_conn() as cur:
             try:
                 cur.execute(
@@ -136,15 +183,15 @@ class EventHandler:
                         INSERT INTO
                             registrations
                         VALUES
-                            (?, ?, ?)
+                            (?, ?, ?, ?)
                     """,
-                    (device_mac, Event.get_name(event), Action.get_name(action))
+                    (device_mac, EventType.get_name(event), ActionType.get_name(action), delay)
                 )
             except sqlite3.IntegrityError:
                 pass
 
 
-    def unregister(self, device_mac: str, event: Event, action: Action):
+    def unregister(self, device_mac: str, event: EventType, action: ActionType):
         with self.db_conn() as cur:
             cur.execute(
                 """
@@ -157,11 +204,11 @@ class EventHandler:
                         AND 
                         action_name = ?
                 """,
-                (device_mac, Event.get_name(event), Action.get_name(action))
+                (device_mac, EventType.get_name(event), ActionType.get_name(action))
             )
 
 
-    def get_action(self, device_mac: str, event_name: str) -> Optional[Action]:
+    def get_action(self, plugin, device: WyzeDevice, event_name: str) -> Optional[ActionType]:
         with self.db_conn() as cur:
             cur.execute(
                 """
@@ -172,20 +219,23 @@ class EventHandler:
                         AND
                         event_name = ?
                 """,
-                (device_mac, event_name)
+                (device.mac, event_name)
             )
             result = cur.fetchone()
             if result is not None:
                 action_name = result[2]
-                return Action.get_by_name(action_name)
+                delay = result[3]
+                action_type = ActionType.get_by_name(action_name)
+                event_type = EventType.get_by_name(event_name)
+                return Action(plugin, action_type, event_type, device, delay)
             return None
 
     
     def get_registrations(self, device_mac: str) -> Tuple[List]:
-        turn_on_registrations = [False] * len(Event)
-        turn_off_registrations = [False] * len(Event)
+        turn_on_registrations = [(False, 0)] * len(EventType)
+        turn_off_registrations = [(False, 0)] * len(EventType)
         with self.db_conn() as cur:
-            for _, event_name, action_name in cur.execute(
+            for _, event_name, action_name, delay in cur.execute(
                 """
                     SELECT * FROM
                         registrations
@@ -194,10 +244,10 @@ class EventHandler:
                 """,
                 (device_mac, )
             ):
-                event = Event.get_by_name(event_name)
-                action = Action.get_by_name(action_name)
-                if action == Action.TURN_ON:
-                    turn_on_registrations[event] = True
-                elif action == Action.TURN_OFF:
-                    turn_off_registrations[event] = True
+                event = EventType.get_by_name(event_name)
+                action = ActionType.get_by_name(action_name)
+                if action == ActionType.TURN_ON:
+                    turn_on_registrations[event] = (True, delay)
+                elif action == ActionType.TURN_OFF:
+                    turn_off_registrations[event] = (True, delay)
         return turn_on_registrations, turn_off_registrations

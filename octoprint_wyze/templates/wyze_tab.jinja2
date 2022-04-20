@@ -1,4 +1,15 @@
-<p>Connected to Wyze as {{ plugin_wyze_email|escape }}.</p>
+<h4>Connected to Wyze as {{ plugin_wyze_email|escape }}.</h4>
+
+<br>
+
+<p>Here you can register event handlers for each device, with optional delays (in minutes). Delays must be specified prior to registration.</p>
+<p>If you are using the delay functionality, you will need to be proactive about manually cancelling any pending event handlers that you do not want to run.</p>
+<ul>
+    <li><p>For instance, if your printer is powered via a Wyze Plug which is registered to turn off 15 minutes after a print has finished, starting a new print <b>will not</b> cancel the pending event handler and your printer will be shut off during the print.</p></li>
+    <li><p>To cancel a pending event handler, simply unregister its corresponding entry in the table. It is safe to re-register it immediately afterward.</p></li>
+</ul>
+
+<br>
 
 <table class="table table-bordered wyze-table">
     <thead>
@@ -20,7 +31,10 @@
             </td>
             <!-- ko foreach: turn_on_registrations -->
                 <td>
-                    <input type="checkbox" data-bind="checked: $data, click: $parent.turnOnCheckBoxClicked;" />
+                    <div class="wyze-registration">
+                        <input type="checkbox" data-bind="checked: $data.registered, click: $parent.turnOnCheckBoxClicked;" />
+                        <input class="wyze-delay" type="number" min="0" step="0.01" data-bind="textInput: $data.delay, disable: $data.registered;" />
+                    </div>
                 </td>
             <!-- /ko -->
         </tr>
@@ -29,9 +43,25 @@
             </td>
             <!-- ko foreach: turn_off_registrations -->
                 <td>
-                    <input type="checkbox" data-bind="checked: $data, click: $parent.turnOffCheckBoxClicked;" />
+                    <div class="wyze-registration">
+                        <input type="checkbox" data-bind="checked: $data.registered, click: $parent.turnOffCheckBoxClicked;" />
+                        <input class="wyze-delay" type="number" min="0" step="0.01" data-bind="textInput: $data.delay, disable: $data.registered;" />
+                    </div>
                 </td>
             <!-- /ko -->
         <tr> 
     </tbody>
 </table>
+
+<br>
+
+<!-- ko if: $root.pendingActions().length > 0 -->
+    <h4>Pending Event Handlers</h4>
+    <p>Unregister the corresponding event handler to cancel.<p>
+    <ul class="wyze-pending-actions">
+        <!-- ko foreach: $root.pendingActions -->
+            <li data-bind="text: $data"></li>
+        <!-- /ko -->
+    </ul>
+<!-- /ko -->
+

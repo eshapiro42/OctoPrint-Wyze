@@ -11,7 +11,27 @@ $(function() {
 
         self.actions = [];
         self.events = [];
+        self.pendingActions = ko.observableArray([]);
         self.devices = ko.observableArray([]);
+
+        OctoPrint.simpleApiCommand(
+            "wyze",
+            "get_enums",
+        ).done(function(response) {
+            self.events = response.events;
+            self.actions = response.actions;
+        });
+
+        function getPendingActions() {
+            OctoPrint.simpleApiCommand(
+                "wyze",
+                "get_pending_actions",
+            ).done(function(response) {
+                self.pendingActions(response);
+            });
+        }
+
+        var getPendingActionsInterval = window.setInterval(getPendingActions, 500);
 
         function Device(data) {
             var this_device = this;
@@ -19,14 +39,6 @@ $(function() {
             this_device.mac = data.device_mac;
             this_device.name = data.device_name;
             this_device.type = data.device_type;
-
-            this_device.turn_on_registrations = $.map(data.turn_on_registrations, function(item) {
-                return ko.observable(item);
-            });
-
-            this_device.turn_off_registrations = $.map(data.turn_off_registrations, function(item) {
-                return ko.observable(item);
-            });
 
             this_device.turnOnDevice = function() {
                 OctoPrint.simpleApiCommand(
@@ -48,7 +60,7 @@ $(function() {
                 );
             };
 
-            this_device.registerDevice = function(event_index, action_name) {
+            this_device.registerDevice = function(event_index, action_name, delay) {
                 event_name = self.events[event_index];
                 OctoPrint.simpleApiCommand(
                     "wyze",
@@ -57,6 +69,7 @@ $(function() {
                         "device_mac": this_device.mac,
                         "event_name": event_name,
                         "action_name": action_name,
+                        "delay": delay,
                     }
                 )
             }
@@ -75,12 +88,12 @@ $(function() {
             }
 
             this_device.turnOnCheckBoxClicked = function(data, js_event) {
-                console.log(js_event)
                 var context = ko.contextFor(js_event.target);
                 var event_index = context.$index();
                 var checked = js_event.currentTarget.checked;
                 if (checked) {
-                    this_device.registerDevice(event_index, "TurnOn");
+                    var delay = js_event.currentTarget.nextElementSibling.valueAsNumber;
+                    this_device.registerDevice(event_index, "TurnOn", delay);
                 }
                 else {
                     this_device.unregisterDevice(event_index, "TurnOn");
@@ -89,28 +102,36 @@ $(function() {
             }
 
             this_device.turnOffCheckBoxClicked = function(data, js_event) {
-                console.log(js_event)
                 var context = ko.contextFor(js_event.target);
                 var event_index = context.$index();
                 var checked = js_event.currentTarget.checked;
                 if (checked) {
-                    this_device.registerDevice(event_index, "TurnOff");
+                    var delay = js_event.currentTarget.nextElementSibling.valueAsNumber;
+                    this_device.registerDevice(event_index, "TurnOff", delay);
                 }
                 else {
                     this_device.unregisterDevice(event_index, "TurnOff");
                 }
                 return true;
             }
+
+            this_device.turn_on_registrations = $.map(data.turn_on_registrations, function(item, event_index) {
+                var registration = {
+                    registered: ko.observable(item[0]),
+                    delay: ko.observable(item[1]),
+                };
+                return registration;
+            });
+
+            this_device.turn_off_registrations = $.map(data.turn_off_registrations, function(item, event_index) {
+                var registration = {
+                    registered: ko.observable(item[0]),
+                    delay: ko.observable(item[1]),
+                };
+                return registration;
+            });
         }
 
-        OctoPrint.simpleApiCommand(
-            "wyze",
-            "get_enums",
-        ).done(function(response) {
-            self.events = response.events;
-            self.actions = response.actions;
-        });
-        
         OctoPrint.simpleApiCommand(
             "wyze",
             "get_devices",

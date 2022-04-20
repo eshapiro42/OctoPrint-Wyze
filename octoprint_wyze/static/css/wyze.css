@@ -27,6 +27,34 @@
     margin-left: 20px;
 }
 
+.wyze-pending-actions {
+    padding-left: 0px;
+    list-style-type: none;
+}
+
+.wyze-registration {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.wyze-delay {
+    margin-top: 12px;
+    max-width: 40px;
+    text-align: left !important;
+    -moz-appearance:textfield; /* Firefox */
+}
+
+.wyze-delay::-webkit-outer-spin-button,
+.wyze-delay::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
 .wyze-sticky-column {
     background-color: ghostwhite;
     left: 0;
