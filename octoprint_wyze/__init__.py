@@ -110,6 +110,8 @@ class WyzePlugin(
             turn_off=["device_mac"],
             register=["device_mac", "event_name", "action_name"],
             unregister=["device_mac", "event_name", "action_name"],
+            add_cancel=["device_mac", "event_name", "action_name"],
+            remove_cancel=["device_mac", "event_name", "action_name"],
         )
 
 
@@ -163,6 +165,22 @@ class WyzePlugin(
             for action in matched_actions:
                 self._logger.info(f"Cancelling pending action {action}...")
                 action.cancel()
+        elif command == "add_cancel":
+            device_mac = data["device_mac"]
+            event_name = data["event_name"]
+            event_type = EventType.get_by_name(event_name)
+            action_name = data["action_name"]
+            action_type = ActionType.get_by_name(action_name)
+            self._logger.info(f"Adding cancellation device_mac={device_mac} event={event_type} action={action_type}.")
+            self.event_handler.add_cancel(device_mac, event_type, action_type)
+        elif command == "remove_cancel":
+            device_mac = data["device_mac"]
+            event_name = data["event_name"]
+            event_type = EventType.get_by_name(event_name)
+            action_name = data["action_name"]
+            action_type = ActionType.get_by_name(action_name)
+            self._logger.info(f"Removing cancellation device_mac={device_mac} event={event_type} action={action_type}.")
+            self.event_handler.remove_cancel(device_mac, event_type, action_type)
 
     
     def on_event(self, event_name, payload):
@@ -170,6 +188,9 @@ class WyzePlugin(
             return
         for device_mac in self.wyze.devices:
             device = self.wyze.get_device_by_mac(device_mac)
+            # Cancel any pending actions that are supposed to be cancelled on this event
+            self.event_handler.process_cancellations(self, device, event_name)
+            # Add event handlers for any registerations that match this event
             if (action := self.event_handler.get_action(self, device, event_name)) is None:
                 continue
             if any(action.device == device for action in self.pending_actions):

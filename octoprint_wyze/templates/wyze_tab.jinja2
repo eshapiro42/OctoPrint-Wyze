@@ -3,10 +3,11 @@
 <br>
 
 <p>Here you can register event handlers for each device, with optional delays (in minutes). Delays must be specified prior to registration.</p>
-<p>If you are using the delay functionality, you will need to be proactive about manually cancelling any pending event handlers that you do not want to run.</p>
+<p>If you are using the delay functionality, you will need to be proactive about cancelling any pending event handlers that you do not want to run.</p>
 <ul>
-    <li><p>For instance, if your printer is powered via a Wyze Plug which is registered to turn off 15 minutes after a print has finished, starting a new print <b>will not</b> cancel the pending event handler and your printer will be shut off during the print.</p></li>
-    <li><p>To cancel a pending event handler, simply unregister its corresponding entry in the table. It is safe to re-register it immediately afterward.</p></li>
+    <li><p>For instance, if your printer is powered via a Wyze Plug which is registered to turn off 15 minutes after a print has finished, starting a new print <b>will not</b> automatically cancel the pending event handler and your printer will be shut off during the print.</p></li>
+    <li><p>To combat this problem, you can click the "✕" to the right of an event to ensure that, if that event occurs, any pending event handlers that would have that effect will be automatically cancelled. In our example, clicking the "✕" for the "PrintStarted" event in the Wyze Plug's "Turn Off" row would prevent the Wyze Plug from turning off if a print is started before any such pending event handlers fire.</p></li>
+    <li><p>To manually cancel a pending event handler, simply unregister its corresponding entry in the table. It is safe to re-register it immediately afterward.</p></li>
 </ul>
 
 <br>
@@ -34,6 +35,7 @@
                     <div class="wyze-registration">
                         <input type="checkbox" data-bind="checked: $data.registered, click: $parent.turnOnCheckBoxClicked;" />
                         <input class="wyze-delay" type="number" min="0" step="0.01" data-bind="textInput: $data.delay, disable: $data.registered;" />
+                        <span class="wyze-x" data-bind="attr: {checked: $data.cancel}, click: $parent.turnOnCancelClicked;">✕</span>
                     </div>
                 </td>
             <!-- /ko -->
@@ -46,6 +48,7 @@
                     <div class="wyze-registration">
                         <input type="checkbox" data-bind="checked: $data.registered, click: $parent.turnOffCheckBoxClicked;" />
                         <input class="wyze-delay" type="number" min="0" step="0.01" data-bind="textInput: $data.delay, disable: $data.registered;" />
+                        <span class="wyze-x" data-bind="attr: {checked: $data.cancel}, click: $parent.turnOffCancelClicked;">✕</span>
                     </div>
                 </td>
             <!-- /ko -->

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import defaultdict
 
 import os
 import sqlite3
@@ -134,7 +135,7 @@ class Action(Thread):
 class EventHandler:
     def __init__(self, data_folder: str):
         self.db_path = os.path.join(data_folder, "wyze-event-handler-v2.db")
-        self.create_table()
+        self.create_tables()
 
     
     @contextmanager
@@ -146,7 +147,7 @@ class EventHandler:
         conn.close()
 
 
-    def create_table(self):
+    def create_tables(self):
         with self.db_conn() as cur:
             cur.execute(
                 """
@@ -166,6 +167,30 @@ class EventHandler:
                         mac_event_action
                     ON
                         registrations
+                    (
+                        device_mac,
+                        event_name,
+                        action_name
+                    )
+                """
+            )
+            cur.execute(
+                """
+                    CREATE TABLE IF NOT EXISTS
+                        cancellations
+                        (
+                            device_mac text,
+                            event_name text,
+                            action_name text
+                        )
+                """
+            )
+            cur.execute(
+                """
+                    CREATE UNIQUE INDEX IF NOT EXISTS
+                        mac_event_action
+                    ON
+                        cancellations
                     (
                         device_mac,
                         event_name,
@@ -208,6 +233,39 @@ class EventHandler:
             )
 
 
+    def add_cancel(self, device_mac: str, event: EventType, action: ActionType):
+        with self.db_conn() as cur:
+            try:
+                cur.execute(
+                    """
+                        INSERT INTO
+                            cancellations
+                        VALUES
+                            (?, ?, ?)
+                    """,
+                    (device_mac, EventType.get_name(event), ActionType.get_name(action))
+                )
+            except sqlite3.IntegrityError:
+                pass
+
+
+    def remove_cancel(self, device_mac: str, event: EventType, action: ActionType):
+        with self.db_conn() as cur:
+            cur.execute(
+                """
+                    DELETE FROM
+                        cancellations
+                    WHERE
+                        device_mac = ?
+                        AND
+                        event_name = ?
+                        AND 
+                        action_name = ?
+                """,
+                (device_mac, EventType.get_name(event), ActionType.get_name(action))
+            )
+
+
     def get_action(self, plugin, device: WyzeDevice, event_name: str) -> Optional[ActionType]:
         with self.db_conn() as cur:
             cur.execute(
@@ -230,10 +288,48 @@ class EventHandler:
                 return Action(plugin, action_type, event_type, device, delay)
             return None
 
+        
+    def process_cancellations(self, plugin, device: WyzeDevice, event_name: str):
+        with self.db_conn() as cur:
+            for _, event_name, action_name in cur.execute(
+                """
+                    SELECT * FROM
+                        cancellations
+                    WHERE
+                        device_mac = ?
+                        AND
+                        event_name = ?
+                """,
+                (device.mac, event_name)
+            ):
+                action_type = ActionType.get_by_name(action_name)
+                matched_actions = []
+                for action in plugin.pending_actions:
+                    if action.device.mac == device.mac and action.action_type == action_type:
+                        matched_actions.append(action)
+                for action in matched_actions:
+                    plugin._logger.info(f"Event {event_name} fired. Cancelling pending action {action}...")
+                    action.cancel()
+            
     
     def get_registrations(self, device_mac: str) -> Tuple[List]:
-        turn_on_registrations = [(False, 0)] * len(EventType)
-        turn_off_registrations = [(False, 0)] * len(EventType)
+        turn_on_registrations = []
+        turn_off_registrations = []
+        for _ in EventType:
+            turn_on_registrations.append(
+                {
+                    "registered": False,
+                    "delay": 0,
+                    "cancel": False
+                }
+            )
+            turn_off_registrations.append(
+                {
+                    "registered": False,
+                    "delay": 0,
+                    "cancel": False
+                }
+            )
         with self.db_conn() as cur:
             for _, event_name, action_name, delay in cur.execute(
                 """
@@ -244,10 +340,27 @@ class EventHandler:
                 """,
                 (device_mac, )
             ):
-                event = EventType.get_by_name(event_name)
-                action = ActionType.get_by_name(action_name)
-                if action == ActionType.TURN_ON:
-                    turn_on_registrations[event] = (True, delay)
-                elif action == ActionType.TURN_OFF:
-                    turn_off_registrations[event] = (True, delay)
+                event_type = EventType.get_by_name(event_name)
+                action_type = ActionType.get_by_name(action_name)
+                if action_type == ActionType.TURN_ON:
+                    turn_on_registrations[event_type]["registered"] = True
+                    turn_on_registrations[event_type]["delay"] = delay
+                elif action_type == ActionType.TURN_OFF:
+                    turn_off_registrations[event_type]["registered"] = True
+                    turn_off_registrations[event_type]["delay"] = delay
+            for _, event_name, action_name in cur.execute(
+                """
+                    SELECT * FROM
+                        cancellations
+                    WHERE
+                        device_mac = ?
+                """,
+                (device_mac, )
+            ):
+                event_type = EventType.get_by_name(event_name)
+                action_type = ActionType.get_by_name(action_name)
+                if action_type == ActionType.TURN_ON:
+                    turn_on_registrations[event_type]["cancel"] = True
+                elif action_type == ActionType.TURN_OFF:
+                    turn_off_registrations[event_type]["cancel"] = True
         return turn_on_registrations, turn_off_registrations

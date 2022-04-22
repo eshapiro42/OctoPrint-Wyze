@@ -17,10 +17,10 @@
     padding-left: 0px;
     overflow-x: auto;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     list-style-type: none;
-    align-items: center;
-    justify-content: center;
+    align-items: baseline;
+    gap: 10px;
 }
 
 .wyze-list li:not(:first-child) {
@@ -138,4 +138,21 @@
 
 .themeify.nighttime th {
     border: 0;
+}
+
+.wyze-x{
+    display: inline-block;
+    cursor: pointer; 
+}
+
+.wyze-x[checked] {
+    color: red;
+}
+
+.wyze-x[unchecked] {
+    color: white;
+}
+
+input[type=checkbox] {
+    margin-bottom: 4px;
 }

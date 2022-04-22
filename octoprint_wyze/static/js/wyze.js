@@ -87,6 +87,60 @@ $(function() {
                 )
             }
 
+            this_device.addCancel = function(event_index, action_name) {
+                event_name = self.events[event_index];
+                OctoPrint.simpleApiCommand(
+                    "wyze",
+                    "add_cancel",
+                    {
+                        "device_mac": this_device.mac,
+                        "event_name": event_name,
+                        "action_name": action_name,
+                    }
+                )
+            }
+
+            this_device.removeCancel = function(event_index, action_name) {
+                event_name = self.events[event_index];
+                OctoPrint.simpleApiCommand(
+                    "wyze",
+                    "remove_cancel",
+                    {
+                        "device_mac": this_device.mac,
+                        "event_name": event_name,
+                        "action_name": action_name,
+                    }
+                )
+            }
+
+            this_device.turnOnCancelClicked = function(data, js_event) {
+                var context = ko.contextFor(js_event.target);
+                var event_index = context.$index();
+                this_device.turn_on_registrations[event_index].cancel(!this_device.turn_on_registrations[event_index].cancel());
+                var checked = this_device.turn_on_registrations[event_index].cancel();
+                if (checked) {
+                    this_device.addCancel(event_index, "TurnOn");
+                }
+                else {
+                    this_device.removeCancel(event_index, "TurnOn");
+                }
+                return true;
+            }
+            
+            this_device.turnOffCancelClicked = function(data, js_event) {
+                var context = ko.contextFor(js_event.target);
+                var event_index = context.$index();
+                this_device.turn_off_registrations[event_index].cancel(!this_device.turn_off_registrations[event_index].cancel());
+                var checked = this_device.turn_off_registrations[event_index].cancel();
+                if (checked) {
+                    this_device.addCancel(event_index, "TurnOff");
+                }
+                else {
+                    this_device.removeCancel(event_index, "TurnOff");
+                }
+                return true;
+            }
+
             this_device.turnOnCheckBoxClicked = function(data, js_event) {
                 var context = ko.contextFor(js_event.target);
                 var event_index = context.$index();
@@ -117,16 +171,20 @@ $(function() {
 
             this_device.turn_on_registrations = $.map(data.turn_on_registrations, function(item, event_index) {
                 var registration = {
-                    registered: ko.observable(item[0]),
-                    delay: ko.observable(item[1]),
+                    eventIndex: event_index,
+                    registered: ko.observable(item.registered),
+                    delay: ko.observable(item.delay),
+                    cancel: ko.observable(item.cancel),
                 };
                 return registration;
             });
 
             this_device.turn_off_registrations = $.map(data.turn_off_registrations, function(item, event_index) {
                 var registration = {
-                    registered: ko.observable(item[0]),
-                    delay: ko.observable(item[1]),
+                    eventIndex: event_index,
+                    registered: ko.observable(item.registered),
+                    delay: ko.observable(item.delay),
+                    cancel: ko.observable(item.cancel),
                 };
                 return registration;
             });
