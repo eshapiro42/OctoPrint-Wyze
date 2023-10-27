@@ -22,7 +22,9 @@ or manually using this URL:
 
 ## Configuration
 
-Add your Wyze username and password in the plugin settings and reload the server. 
+Generate a Wyze API key and key ID here: https://developer-api-console.wyze.com/#/apikey/view.
+
+Add your Wyze username, password, API key and key ID (generated in the previous step) in the plugin settings and reload the server. 
 
 | :warning: Your Wyze username and password are encrypted by the plugin before being stored on your filesystem, but can be decrypted with relative ease by anyone on your system with access to OctoPrint's `config.yaml` file. Please ensure that you're taking appropriate precautions and not reusing passwords between sites! |
 | --- |
