@@ -4,9 +4,14 @@ from wyze_sdk.errors import WyzeClientConfigurationError, WyzeApiError
 
 
 class Wyze:
-    def __init__(self, email, password):
+    def __init__(self, email, password, api_key, key_id):
         try:
-            self.client = Client(email=email, password=password)
+            self.client = Client(
+                email=email,
+                password=password,
+                api_key=api_key,
+                key_id=key_id
+            )
         except (WyzeClientConfigurationError, WyzeApiError):
             self.client = None
         self.refresh_devices()

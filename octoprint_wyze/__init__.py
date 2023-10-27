@@ -41,23 +41,35 @@ class WyzePlugin(
         return dict(
             wyze_email=None,
             wyze_password=None,
+            wyze_api_key=None,
+            wyze_key_id=None,
             wyze_key=None,
         )
 
 
     def on_settings_save(self, data):
         if "wyze_password" in data:
-            # Encrypt the password
+            # email = self._settings.get(["wyze_email"])
+            email = data["wyze_email"]
+            # Encrypt the password and API key
             password = data["wyze_password"]
+            api_key = data["wyze_api_key"]
+            key_id = data["wyze_key_id"]
             key = Fernet.generate_key()
             fernet = Fernet(key)
             encrypted_password = fernet.encrypt(password.encode())
+            encrypted_api_key = fernet.encrypt(api_key.encode())
+            encrypted_key_id = fernet.encrypt(key_id.encode())
             data["wyze_password"] = encrypted_password
+            data["wyze_api_key"] = encrypted_api_key
+            data["wyze_key_id"] = encrypted_key_id
             data["wyze_key"] = key
             # Try to connect to Wyze
             self.wyze = Wyze(
-                email=self._settings.get(["wyze_email"]),
-                password=password
+                email=email,
+                password=password,
+                api_key=api_key,
+                key_id=key_id,
             )
         SettingsPlugin.on_settings_save(self, data)
 
@@ -65,16 +77,25 @@ class WyzePlugin(
     def on_settings_load(self):
         data = SettingsPlugin.on_settings_load(self)
         if data["wyze_password"] is not None:
-            # Decrypt the password
+            email = self._settings.get(["wyze_email"])
+            # Decrypt the password and API key
             encrypted_password = data["wyze_password"]
+            encrypted_api_key = data["wyze_api_key"]
+            encrypted_key_id = data["wyze_key_id"]
             key = data["wyze_key"]
             fernet = Fernet(key)
             password = fernet.decrypt(encrypted_password).decode()
+            api_key = fernet.decrypt(encrypted_api_key).decode()
+            key_id = fernet.decrypt(encrypted_key_id).decode()
             data["wyze_password"] = password
+            data["wyze_api_key"] = api_key
+            data["wyze_key_id"] = key_id
             # Try to connect to Wyze
             self.wyze = Wyze(
-                email=self._settings.get(["wyze_email"]),
-                password=password
+                email=email,
+                password=password,
+                api_key=api_key,
+                key_id=key_id,
             )
         return data
 
